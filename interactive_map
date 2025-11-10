@@ -32,25 +32,25 @@ if not iris_path.exists():
     logger.error(f"IRIS file not found: {iris_path}")
     exit(1)
 
-print(f"  Iris download...")
+logger.info(f"  Iris download...")
 iris_gdf = gpd.read_file(iris_path)
-print(f"  ✓ {len(iris_gdf):,} IRIS chargés")
+logger.info(f"  ✓ {len(iris_gdf):,} IRIS chargés")
 
 # BPE
 bpe_path = DATA_DIR / "bpe_lyon.geojson"
 if not bpe_path.exists():
-    print(f"❌ Fichier BPE non trouvé: {bpe_path}")
-    print("Lancez d'abord : python traiter_donnees_lyon.py")
+    logger.info(f"❌ Fichier BPE non trouvé: {bpe_path}")
+    logger.info("Lancez d'abord : python traiter_donnees_lyon.py")
     exit(1)
 
-print(f"  → Chargement de la BPE...")
+logger.info(f"  → Chargement de la BPE...")
 bpe_gdf = gpd.read_file(bpe_path)
-print(f"  ✓ {len(bpe_gdf):,} équipements chargés")
+logger.info(f"  ✓ {len(bpe_gdf):,} équipements chargés")
 
 # ============================================================================
 # 2. PRÉPARER LES CATÉGORIES D'ÉQUIPEMENTS
 # ============================================================================
-print("\n🏷️  Catégorisation des équipements...")
+logger.info("\n🏷️  Catégorisation des équipements...")
 
 # Définir les grandes catégories et leurs couleurs
 CATEGORIES = {
@@ -97,14 +97,14 @@ def get_category(typequ):
 
 bpe_gdf['categorie'] = bpe_gdf['TYPEQU'].apply(get_category)
 
-print(f"  ✓ Équipements catégorisés")
+logger.info(f"  ✓ Équipements catégorisés")
 for cat in bpe_gdf['categorie'].value_counts().head(10).items():
-    print(f"    • {cat[0]:20s} : {cat[1]:6,}")
+    logger.info(f"    • {cat[0]:20s} : {cat[1]:6,}")
 
 # ============================================================================
 # 3. CRÉER LA CARTE DE BASE
 # ============================================================================
-print("\n🗺️  Création de la carte...")
+logger.info("\n🗺️  Création de la carte...")
 
 # Calculer le centre de la carte
 center_lat = iris_gdf.geometry.centroid.y.mean()
@@ -118,12 +118,12 @@ m = folium.Map(
     control_scale=True
 )
 
-print(f"  ✓ Carte centrée sur [{center_lat:.4f}, {center_lon:.4f}]")
+logger.info(f"  ✓ Carte centrée sur [{center_lat:.4f}, {center_lon:.4f}]")
 
 # ============================================================================
 # 4. AJOUTER LES CONTOURS IRIS
 # ============================================================================
-print("\n📍 Ajout des contours IRIS...")
+logger.info("\n📍 Ajout des contours IRIS...")
 
 # Déterminer la colonne pour le nom/code IRIS
 name_col = None
@@ -140,7 +140,7 @@ for col in ['code_iris', 'CODE_IRIS', 'IRIS', 'DCOMIRIS']:
 
 # Calculer une choroplèthe si on a le nombre d'équipements
 if 'nb_equipements' in iris_gdf.columns:
-    print("  → Création de la choroplèthe (nombre d'équipements par IRIS)...")
+    logger.info("  → Création de la choroplèthe (nombre d'équipements par IRIS)...")
     
     folium.Choropleth(
         geo_data=iris_gdf,
@@ -155,7 +155,7 @@ if 'nb_equipements' in iris_gdf.columns:
         highlight=True
     ).add_to(m)
 else:
-    print("  → Ajout des contours IRIS (sans choroplèthe)...")
+    logger.info("  → Ajout des contours IRIS (sans choroplèthe)...")
     
     folium.GeoJson(
         iris_gdf,
@@ -176,12 +176,12 @@ else:
         )
     ).add_to(m)
 
-print(f"  ✓ {len(iris_gdf):,} IRIS ajoutés")
+logger.info(f"  ✓ {len(iris_gdf):,} IRIS ajoutés")
 
 # ============================================================================
 # 5. AJOUTER LES ÉQUIPEMENTS PAR CATÉGORIE
 # ============================================================================
-print("\n🏢 Ajout des équipements par catégorie...")
+logger.info("\n🏢 Ajout des équipements par catégorie...")
 
 # Créer des groupes de marqueurs par catégorie
 feature_groups = {}
@@ -197,7 +197,7 @@ MAX_MARKERS = 5000  # Limite pour la performance
 bpe_sample = bpe_gdf if len(bpe_gdf) <= MAX_MARKERS else bpe_gdf.sample(MAX_MARKERS, random_state=42)
 
 if len(bpe_gdf) > MAX_MARKERS:
-    print(f"  ⚠️  Affichage d'un échantillon de {MAX_MARKERS:,} équipements (sur {len(bpe_gdf):,})")
+    logger.info(f"  ⚠️  Affichage d'un échantillon de {MAX_MARKERS:,} équipements (sur {len(bpe_gdf):,})")
 
 for idx, row in bpe_sample.iterrows():
     cat = row['categorie']
@@ -227,12 +227,12 @@ for idx, row in bpe_sample.iterrows():
         icon=folium.Icon(color=color, icon=icon, prefix='glyphicon')
     ).add_to(feature_groups[cat])
 
-print(f"  ✓ {len(bpe_sample):,} équipements ajoutés")
+logger.info(f"  ✓ {len(bpe_sample):,} équipements ajoutés")
 
 # ============================================================================
 # 6. AJOUTER LES CONTRÔLES
 # ============================================================================
-print("\n⚙️  Ajout des contrôles...")
+logger.info("\n⚙️  Ajout des contrôles...")
 
 # Ajouter le contrôle des couches
 folium.LayerControl(collapsed=False).add_to(m)
@@ -255,38 +255,38 @@ legend_html += "</div>"
 
 m.get_root().html.add_child(folium.Element(legend_html))
 
-print("  ✓ Contrôles ajoutés")
+logger.info("  ✓ Contrôles ajoutés")
 
 # ============================================================================
 # 7. SAUVEGARDER LA CARTE
 # ============================================================================
-print(f"\n💾 Sauvegarde de la carte...")
+logger.info(f"\n💾 Sauvegarde de la carte...")
 
 m.save(OUTPUT_FILE)
-print(f"  ✓ Carte sauvegardée : {OUTPUT_FILE}")
+logger.info(f"  ✓ Carte sauvegardée : {OUTPUT_FILE}")
 
 # ============================================================================
 # RÉSUMÉ
 # ============================================================================
-print("\n" + "=" * 60)
-print("✅ CARTE CRÉÉE AVEC SUCCÈS !")
-print("=" * 60)
+logger.info("\n" + "=" * 60)
+logger.info("✅ CARTE CRÉÉE AVEC SUCCÈS !")
+logger.info("=" * 60)
 
-print(f"\n📊 Contenu de la carte :")
-print(f"  • {len(iris_gdf):,} IRIS")
-print(f"  • {len(bpe_sample):,} équipements affichés")
-print(f"  • {len(CATEGORIES)} catégories principales")
+logger.info(f"\n📊 Contenu de la carte :")
+logger.info(f"  • {len(iris_gdf):,} IRIS")
+logger.info(f"  • {len(bpe_sample):,} équipements affichés")
+logger.info(f"  • {len(CATEGORIES)} catégories principales")
 
-print(f"\n🌐 Pour visualiser la carte :")
-print(f"  → Ouvrez le fichier : {OUTPUT_FILE}")
-print(f"  → Utilisez les contrôles de couches pour filtrer les catégories")
-print(f"  → Cliquez sur les marqueurs pour voir les détails")
+logger.info(f"\n🌐 Pour visualiser la carte :")
+logger.info(f"  → Ouvrez le fichier : {OUTPUT_FILE}")
+logger.info(f"  → Utilisez les contrôles de couches pour filtrer les catégories")
+logger.info(f"  → Cliquez sur les marqueurs pour voir les détails")
 
-print("\n💡 Fonctionnalités :")
-print("  • Clustering des marqueurs pour la performance")
-print("  • Filtrage par catégorie d'équipement")
-print("  • Tooltips et popups informatifs")
+logger.info("\n💡 Fonctionnalités :")
+logger.info("  • Clustering des marqueurs pour la performance")
+logger.info("  • Filtrage par catégorie d'équipement")
+logger.info("  • Tooltips et popups informatifs")
 if 'nb_equipements' in iris_gdf.columns:
-    print("  • Choroplèthe montrant la densité d'équipements par IRIS")
+    logger.info("  • Choroplèthe montrant la densité d'équipements par IRIS")
 
-print("=" * 60)
+logger.info("=" * 60)
