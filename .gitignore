@@ -1,1 +1,4 @@
-/home/onyxia/work/mobiTIC/data_lyon/bpe_lyon.geojson
+data_lyon/
+
+carte_*.html
+.venv
