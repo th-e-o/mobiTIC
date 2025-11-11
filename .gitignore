@@ -2,3 +2,5 @@
 
 carte_*.html
 .venv
+__pycache__/
+*.pyc
