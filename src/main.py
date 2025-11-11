@@ -26,30 +26,31 @@ def parse_arguments() -> argparse.Namespace:
 
 def main():
     args = parse_arguments()
-    
+    logger.info(f"Main called with arguments: {args}")
+
     # Default mode:
     if not args.download and not args.map:
-        args.download = False
+        args.download = True
         args.map = True
         
-        try:
-            if args.download:
-                logger.info("Data downloading")
-                download_bpe()
-                download_IRIS()
-                geodataframe()
+    try:
+        if args.download:
+            logger.info("Data downloading")
+            download_bpe()
+            download_IRIS()
+            geodataframe()
+        
+        if args.map:
+            logger.info("Map creation")
             
-            if args.map:
-                logger.info("Map creation")
-                
-                from utils.map_generator import create_interactive_map
-                create_interactive_map()
-                
-                logger.info(f"Map created: {OUTPUT_FILE}")
+            from utils.map_generator import create_interactive_map
+            create_interactive_map()
+            
+            logger.info(f"Map created: {OUTPUT_FILE}")
 
-        except Exception as e:
-            logger.error(f"Error: {e}")
-            raise 
+    except Exception as e:
+        logger.error(f"Error: {e}")
+        raise 
 
 
 if __name__ == "__main__":

@@ -12,7 +12,7 @@ from pathlib import Path
 PROJECT_ROOT = Path(__file__).parent.parent.parent
 
 # Dossiers de données
-DATA_DIR = PROJECT_ROOT / "data_lyon"
+DATA_DIR = PROJECT_ROOT / "data"
 OUTPUT_DIR = DATA_DIR / "lyon"
 
 # Créer les dossiers si nécessaire
@@ -38,8 +38,8 @@ OUTPUT_PATH = PROJECT_ROOT / OUTPUT_FILE
 # ============================================================================
 
 # Départements à inclure
-DEPARTEMENTS = ['69']  # Rhône/Métropole de Lyon
-# Pour élargir : DEPARTEMENTS = ['69', '01', '42', '38']
+# DEPARTEMENTS = ['69']  # Rhône/Métropole de Lyon
+DEPARTEMENTS = ['69', '01', '42', '38'] # Pour élargir
 
 # Centre de la carte (Lyon)
 MAP_ZOOM = 11
