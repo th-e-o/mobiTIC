@@ -15,13 +15,11 @@ from .settings import (
     
     # Zone géographique
     DEPARTEMENTS,
-    MAP_CENTER,
     MAP_ZOOM,
     
     # URLs
     BPE_URL,
-    IRIS_WFS_URL,
-    IRIS_WFS_PARAMS,
+    IRIS_URL,
     
     # Paramètres
     MAX_MARKERS,
@@ -50,13 +48,11 @@ __all__ = [
     
     # Zone géographique
     'DEPARTEMENTS',
-    'MAP_CENTER',
     'MAP_ZOOM',
     
     # URLs
     'BPE_URL',
-    'IRIS_WFS_URL',
-    'IRIS_WFS_PARAMS',
+    'IRIS_URL',
     
     # Paramètres
     'MAX_MARKERS',
