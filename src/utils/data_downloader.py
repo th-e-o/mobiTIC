@@ -13,11 +13,12 @@ import logging
 import py7zr
 import tempfile
 
+from config import OUTPUT_DIR, DEPARTEMENTS, BPE_URL, IRIS_URL, CHUNK_SIZE, REQUEST_TIMEOUT, CRS_LAMBERT93, CRS_WGS84
+
 logger = logging.getLogger(__name__)
 
-from config import OUTPUT_DIR, DEPARTEMENTS, BPE_URL, 
 
-def download_bpe(): 
+def download_bpe():
     try:
         response = requests.get(BPE_URL, stream=True)
         response.raise_for_status()
@@ -26,7 +27,7 @@ def download_bpe():
         
         content = io.BytesIO()
         with tqdm(total=total_size, unit='B', unit_scale=True, desc="BPE") as pbar:
-            for chunk in response.iter_content(chunk_size=8192):
+            for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
                 content.write(chunk)
                 pbar.update(len(chunk))
         
@@ -50,14 +51,14 @@ def download_bpe():
 
 def download_IRIS():
     try:
-        response = requests.get(IRIS_URL, stream=True, timeout=300)
+        response = requests.get(IRIS_URL, stream=True, timeout=REQUEST_TIMEOUT)
         response.raise_for_status()
         
         total_size = int(response.headers.get('content-length', 0))
         
         archive_content = io.BytesIO()
         with tqdm(total=total_size, unit='B', unit_scale=True, desc="IRIS") as pbar:
-            for chunk in response.iter_content(chunk_size=8192):
+            for chunk in response.iter_content(chunk_size=CHUNK_SIZE):
                 archive_content.write(chunk)
                 pbar.update(len(chunk))
         
@@ -83,25 +84,15 @@ def download_IRIS():
             logger.info(f"{len(iris_gdf):,} IRIS chargés (France entière)")
             
             # Le fichier est en LAMB93, reprojeter en WGS84
-            if iris_gdf.crs != 'EPSG:4326':
+            if iris_gdf.crs != CRS_WGS84:
                 logger.info("Reprojection en WGS84...")
-                iris_gdf = iris_gdf.to_crs('EPSG:4326')
+                iris_gdf = iris_gdf.to_crs(CRS_WGS84)
             
             # Filtrer sur les départements
-            # Trouver la colonne du code IRIS
-            code_col = None
-            for col in ['CODE_IRIS', 'code_iris', 'IRIS', 'DCOMIRIS']:
-                if col in iris_gdf.columns:
-                    code_col = col
-                    break
-            
-            if code_col:
-                iris_gdf['dep'] = iris_gdf[code_col].astype(str).str[:2]
-                iris_lyon = iris_gdf[iris_gdf['dep'].isin(DEPARTEMENTS)].copy()
-                logger.info(f"{len(iris_lyon):,} IRIS dans les départements {', '.join(DEPARTEMENTS)}")
-            else:
-                logger.warning("Colonne CODE_IRIS non trouvée, sauvegarde de tous les IRIS")
-                iris_lyon = iris_gdf
+            code_col = 'code_iris'
+            iris_gdf['dep'] = iris_gdf[code_col].astype(str).str[:2]
+            iris_lyon = iris_gdf[iris_gdf['dep'].isin(DEPARTEMENTS)].copy()
+            logger.info(f"{len(iris_lyon):,} IRIS dans les départements {', '.join(DEPARTEMENTS)}")
             
             # Sauvegarder en GeoJSON
             iris_lyon_path = OUTPUT_DIR / "iris_lyon.geojson"
@@ -112,6 +103,7 @@ def download_IRIS():
         
     except Exception as e:
         logger.error(f"Erreur lors du téléchargement des IRIS : {e}")
+
 
 def geodataframe():
     try:
@@ -127,11 +119,11 @@ def geodataframe():
         bpe_gdf = gpd.GeoDataFrame(
             bpe_lyon,
             geometry=gpd.points_from_xy(bpe_lyon.LAMBERT_X, bpe_lyon.LAMBERT_Y),
-            crs='EPSG:2154'  # Lambert 93
+            crs=CRS_LAMBERT93  # Lambert 93
         )
         
         # Reprojeter en WGS84 pour la compatibilité avec les cartes web
-        bpe_gdf = bpe_gdf.to_crs('EPSG:4326')
+        bpe_gdf = bpe_gdf.to_crs(CRS_WGS84)
         
         # Sauvegarder en GeoJSON
         bpe_geo_path = OUTPUT_DIR / "bpe_lyon.geojson"
