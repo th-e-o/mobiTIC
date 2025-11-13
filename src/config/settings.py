@@ -52,7 +52,7 @@ MAP_ZOOM = 11
 BPE_URL = "https://www.insee.fr/fr/statistiques/fichier/8217525/BPE24.parquet"
 
 # Contours IRIS
-IRIS_URL = "https://data.geopf.fr/telechargement/download/CONTOURS-IRIS/CONTOURS-IRIS_3-0__GPKG_LAMB93_FXX_2024-01-01/CONTOURS-IRIS_3-0__GPKG_LAMB93_FXX_2024-01-01.7z"
+IRIS_URL = "https://data.geopf.fr/telechargement/download/CONTOURS-IRIS/CONTOURS-IRIS_2-1__SHP__FRA_2020-01-01/CONTOURS-IRIS_2-1__SHP__FRA_2020-01-01.7z"
 
 
 # ============================================================================

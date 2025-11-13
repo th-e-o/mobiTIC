@@ -70,40 +70,99 @@ def download_IRIS():
             with py7zr.SevenZipFile(archive_content, mode='r') as archive:
                 archive.extractall(path=temp_path)
             
-            # Find GPKG file
-            gpkg_files = list(temp_path.rglob("*.gpkg"))
+            logger.info("Recherche de fichiers géospatiaux dans l'archive...")
             
-            if not gpkg_files:
-                raise Exception("No GPKG file in the archive")
+            # ✅ MODIFICATION : Chercher TOUS les shapefiles (y compris sous-dossiers)
+            shp_files = list(temp_path.rglob("*.shp"))
             
-            gpkg_file = gpkg_files[0]
-            logger.info(f"Lecture du fichier GPKG : {gpkg_file.name}")
+            logger.info(f"Trouvé {len(shp_files)} fichier(s) .shp:")
             
-            # Charger en GeoDataFrame
-            iris_gdf = gpd.read_file(gpkg_file)
-            logger.info(f"{len(iris_gdf):,} IRIS chargés (France entière)")
+            # Analyser chaque shapefile pour trouver celui avec le plus d'IRIS
+            best_file = None
+            max_features = 0
             
-            # Le fichier est en LAMB93, reprojeter en WGS84
-            if iris_gdf.crs != CRS_WGS84:
+            for shp_file in shp_files:
+                # Lire juste le nombre de features (rapide)
+                try:
+                    gdf_test = gpd.read_file(shp_file)
+                    n_features = len(gdf_test)
+                    
+                    # Afficher pour debug
+                    logger.info(f"  - {shp_file.relative_to(temp_path)}: {n_features} features")
+                    
+                    # Garder le fichier avec le plus de features
+                    if n_features > max_features:
+                        max_features = n_features
+                        best_file = shp_file
+                    
+                    del gdf_test  # Libérer la mémoire
+                    
+                except Exception as e:
+                    logger.warning(f"  - {shp_file.name}: Erreur lecture ({e})")
+            
+            if not best_file:
+                raise Exception("Aucun fichier shapefile valide trouvé")
+            
+            logger.info(f"✅ Fichier sélectionné : {best_file.relative_to(temp_path)} ({max_features:,} features)")
+            
+            # Charger le meilleur fichier
+            logger.info("Lecture du fichier SHP...")
+            iris_gdf = gpd.read_file(best_file)
+            logger.info(f"✅ {len(iris_gdf):,} IRIS chargés")
+            
+            # Afficher le CRS pour vérification
+            logger.info(f"CRS : {iris_gdf.crs}")
+            
+            # Reprojeter en WGS84
+            if iris_gdf.crs and iris_gdf.crs != CRS_WGS84:
                 logger.info("Reprojection en WGS84...")
                 iris_gdf = iris_gdf.to_crs(CRS_WGS84)
+                logger.info("✅ Reprojection terminée")
+            
+            # Trouver la colonne code IRIS
+            possible_code_cols = ['code_iris', 'CODE_IRIS', 'DCOMIRIS', 'IRIS']
+            code_col = None
+            
+            for col in possible_code_cols:
+                if col in iris_gdf.columns:
+                    code_col = col
+                    logger.info(f"Colonne code IRIS trouvée : {code_col}")
+                    break
+            
+            if not code_col:
+                logger.warning(f"Colonnes disponibles : {list(iris_gdf.columns)}")
+                raise Exception(f"Impossible de trouver la colonne code IRIS")
+            
+            # ✅ DEBUG : Afficher quelques codes IRIS pour vérifier
+            sample_codes = iris_gdf[code_col].head(10).tolist()
+            logger.info(f"Exemples de codes IRIS : {sample_codes}")
             
             # Filtrer sur les départements
-            code_col = 'code_iris'
             iris_gdf['dep'] = iris_gdf[code_col].astype(str).str[:2]
+            
+            # ✅ DEBUG : Afficher tous les départements présents
+            deps_present = sorted(iris_gdf['dep'].unique())
+            logger.info(f"Départements présents dans le fichier ({len(deps_present)}): {deps_present[:20]}...")  # Premiers 20
+            
             iris_lyon = iris_gdf[iris_gdf['dep'].isin(DEPARTEMENTS)].copy()
-            logger.info(f"{len(iris_lyon):,} IRIS dans les départements {', '.join(DEPARTEMENTS)}")
+            logger.info(f"✅ {len(iris_lyon):,} IRIS dans les départements {', '.join(DEPARTEMENTS)}")
+            
+            # ✅ VÉRIFICATION : Si 0 IRIS trouvés, il y a un problème
+            if len(iris_lyon) == 0:
+                logger.error(f"❌ AUCUN IRIS trouvé pour les départements {DEPARTEMENTS}")
+                logger.error(f"Départements disponibles : {deps_present}")
+                raise Exception(f"Aucun IRIS trouvé pour les départements {DEPARTEMENTS}")
             
             # Sauvegarder en GeoJSON
             iris_lyon_path = OUTPUT_DIR / "iris_lyon.geojson"
             iris_lyon.to_file(iris_lyon_path, driver='GeoJSON')
-            logger.info(f"IRIS sauvegardés : {iris_lyon_path}")
+            logger.info(f"✅ IRIS sauvegardés : {iris_lyon_path}")
             
             return iris_lyon
         
     except Exception as e:
-        logger.error(f"Erreur lors du téléchargement des IRIS : {e}")
-
+        logger.error(f"❌ Erreur lors du téléchargement des IRIS : {e}")
+        raise
 
 def geodataframe():
     try:
