@@ -1,0 +1,36 @@
+Metadata-Version: 2.4
+Name: mobitic
+Version: 0.1.0
+Summary: Add your description here
+Requires-Python: >=3.13
+Description-Content-Type: text/markdown
+Requires-Dist: dotenv>=0.9.9
+Requires-Dist: fastparquet>=2024.11.0
+Requires-Dist: folium>=0.20.0
+Requires-Dist: geopandas>=1.1.1
+Requires-Dist: pandas>=2.3.3
+Requires-Dist: py7zr>=1.0.0
+Requires-Dist: requests>=2.32.5
+Requires-Dist: tqdm>=4.67.1
+
+# Dossier de Données
+
+Ce dossier contient les données téléchargées du projet.
+
+## Structure
+```
+data/
+└── lyon/
+    ├── bpe_lyon.parquet        # Base Permanente des Équipements
+    ├── bpe_lyon.geojson        # BPE géolocalisé
+    └── iris_lyon.geojson       # Contours IRIS
+```
+
+## Téléchargement
+
+Les données ne sont pas versionnées car trop volumineuses.
+
+Pour les télécharger :
+```bash
+python src/main.py --download
+```
